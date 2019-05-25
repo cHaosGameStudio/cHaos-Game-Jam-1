@@ -11,6 +11,7 @@ public class Character : MonoBehaviour
     private float currentAttackCooldown = 0;
     private NavMeshAgent agent;
     private Character chasingEnemy;
+    private Vector3 walkingEndPosition;
 
     public float speed = 2;
     public float maxHealth = 100;
@@ -27,13 +28,14 @@ public class Character : MonoBehaviour
         agent.speed = speed;
 
         health = maxHealth;
-        Walk(transform.position + transform.forward * 10);
+
+        walkingEndPosition = transform.position + transform.forward * 10;
+        Walk(walkingEndPosition);
     }
 
     // Update is called once per frame
     void Update()
     {
-        print(state);
         switch(state)
         {
             case State.ATTACKING:
@@ -90,6 +92,18 @@ public class Character : MonoBehaviour
 
     void Attack()
     {
+        if (chasingEnemy == null)
+        {
+            Walk(walkingEndPosition);
+            return;
+        }
+
+        if(Vector3.Distance(transform.position, chasingEnemy.transform.position) > attackRange)
+        {
+            ChaseEnemy(chasingEnemy);
+            return;
+        }
+
         if (currentAttackCooldown <= 0)
         {
             print("Napad!");
@@ -102,11 +116,11 @@ public class Character : MonoBehaviour
 
     Character GetFacingEnemy()
     {
-        RaycastHit[] hits = Physics.RaycastAll(transform.position, transform.forward, attackRange);
+        RaycastHit[] hits = Physics.SphereCastAll(transform.position, 0.5f, transform.forward, attackRange);
 
         foreach(RaycastHit hit in hits)
         {
-            Character hitCharacter = hit.transform.parent.GetComponent<Character>();
+            Character hitCharacter = hit.transform.parent ? hit.transform.parent.GetComponent<Character>() : null;
             if (hitCharacter && evil != hitCharacter.evil)
             {
                 return hitCharacter;
